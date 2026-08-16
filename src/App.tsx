@@ -17,6 +17,7 @@ import { TicketWalletModal } from './components/TicketWalletModal';
 import { EmergencyContactsModal } from './components/EmergencyContactsModal';
 import { ExpenseEditModal } from './components/ExpenseEditModal';
 import { PhotoUploadModal } from './components/PhotoUploadModal';
+import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { CurrencyMode } from './utils/currency';
 
 export default function App() {
@@ -57,6 +58,7 @@ export default function App() {
   const [expenseTargetItemId, setExpenseTargetItemId] = useState<string | undefined>(undefined);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
   const [photoTargetItemId, setPhotoTargetItemId] = useState<string | undefined>(undefined);
+  const [isPwaGuideOpen, setIsPwaGuideOpen] = useState(false);
 
   // Sync dark mode class
   useEffect(() => {
@@ -451,6 +453,7 @@ export default function App() {
           setEditingItem(null);
           setIsItemModalOpen(true);
         }}
+        onOpenInstallModal={() => setIsPwaGuideOpen(true)}
         notifications={notifications}
       />
 
@@ -609,6 +612,12 @@ export default function App() {
         selectedDayIndex={selectedDayIndex}
         editingItem={editingItem}
         onSaveItem={handleSaveItem}
+      />
+
+      {/* PWA Home Screen Install Banner & Guide */}
+      <PWAInstallPrompt
+        isForceOpenModal={isPwaGuideOpen}
+        onCloseModal={() => setIsPwaGuideOpen(false)}
       />
 
       {/* Footer */}

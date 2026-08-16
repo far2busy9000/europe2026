@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Sun, Moon, Wifi, WifiOff, Users, Calendar, 
   FileSpreadsheet, Download, PlusCircle, Sparkles, CheckCircle2,
-  Ticket, ShieldAlert, MoreVertical, X, Bell, Globe
+  Ticket, ShieldAlert, MoreVertical, X, Bell, Globe, Smartphone
 } from 'lucide-react';
 import { TripData, CollaborationNotification } from '../types';
 import { downloadICSFile } from '../services/icsExport';
@@ -23,6 +23,7 @@ interface NavbarProps {
   onOpenCsvModal: () => void;
   onOpenCollabModal: () => void;
   onOpenAddItemModal: () => void;
+  onOpenInstallModal?: () => void;
   notifications: CollaborationNotification[];
 }
 
@@ -40,6 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenCsvModal,
   onOpenCollabModal,
   onOpenAddItemModal,
+  onOpenInstallModal,
   notifications
 }) => {
   const [isOnline, setIsOnline] = useState<boolean>(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -198,6 +200,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                       {darkMode ? '🌙 Night' : '☀️ Sunny'}
                     </span>
                   </button>
+
+                  {onOpenInstallModal && (
+                    <button
+                      onClick={() => {
+                        onOpenInstallModal();
+                        setShowMobileMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-black text-[#1A535C] dark:text-[#FFE66D] bg-[#FFE66D]/30 hover:bg-[#FFE66D]/50 dark:bg-slate-800 dark:hover:bg-slate-700 border border-[#FFE66D] dark:border-slate-700 flex items-center justify-between cursor-pointer transition-all"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="w-4 h-4 text-[#FF6B6B]" />
+                        <span>Install App on Phone</span>
+                      </div>
+                      <span className="text-[10px] font-black uppercase px-1.5 py-0.5 rounded bg-[#FF6B6B] text-white">
+                        PWA
+                      </span>
+                    </button>
+                  )}
 
                   {/* Trip Safety & Emergency Numbers */}
                   <button

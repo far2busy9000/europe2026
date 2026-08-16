@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "trips": {
+      "title": "Trip",
+      "description": "European Family Trip collaborative state containing itinerary days, notes, packing list, and metadata",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "dates": { "type": "string" },
+        "version": { "type": "number" },
+        "lastModifiedBy": { "type": "string" },
+        "lastModifiedAt": { "type": "string" },
+        "collaborators": { "type": "array" },
+        "days": { "type": "array" },
+        "packingList": { "type": "array" },
+        "emergencyContacts": { "type": "array" }
+      },
+      "required": ["title", "days"]
+    },
+    "activity_feed": {
+      "title": "Activity Notification",
+      "description": "Live collaborative updates from family members",
+      "type": "object",
+      "properties": {
+        "timestamp": { "type": "string" },
+        "author": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["timestamp", "author", "action", "details"]
+    }
+  },
+  "firestore": {
+    "trips": {
+      "schema": "trips",
+      "description": "Root collection holding the family shared trip document"
+    },
+    "activity_feed": {
+      "schema": "activity_feed",
+      "description": "Feed of real-time family updates"
+    }
+  }
+}

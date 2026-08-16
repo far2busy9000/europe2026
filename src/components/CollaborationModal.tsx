@@ -128,8 +128,8 @@ export const CollaborationModal: React.FC<CollaborationModalProps> = ({
             <h4 className="text-xs font-black uppercase tracking-wider text-[#1A535C] dark:text-slate-400">
               Active Group Members ({trip.members.length})
             </h4>
-            <span className="text-[11px] text-[#4ECDC4] font-black flex items-center gap-1 bg-[#4ECDC4]/10 px-2 py-0.5 rounded-full border border-[#4ECDC4]/30">
-              <Wifi className="w-3 h-3" /> Live Peer Sync Active
+            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-black flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-700/50">
+              <Wifi className="w-3 h-3 text-emerald-500 animate-pulse" /> Firebase Cloud Sync Online
             </span>
           </div>
 

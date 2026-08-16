@@ -4,6 +4,7 @@ import {
   WaypointPhoto, FamilyMember, CollaborationNotification 
 } from './types';
 import { loadTripData, saveTripData, subscribeToTripSync, loadNotifications, saveNotification } from './services/storage';
+import { subscribeToCloudTrip, subscribeToCloudActivity } from './services/firebase';
 import { Navbar } from './components/Navbar';
 import { DayNavigator } from './components/DayNavigator';
 import { DayTimelineView } from './components/DayTimelineView';
@@ -76,12 +77,25 @@ export default function App() {
     localStorage.setItem('eur26_currency_mode', currencyMode);
   }, [currencyMode]);
 
-  // Subscribe to real-time BroadcastChannel sync across tabs/windows
+  // Subscribe to real-time BroadcastChannel sync across tabs/windows & Cloud Firestore sync
   useEffect(() => {
-    const unsubscribe = subscribeToTripSync((syncedData) => {
+    const unsubLocal = subscribeToTripSync((syncedData) => {
       setTrip(syncedData);
     });
-    return () => unsubscribe();
+
+    const unsubCloud = subscribeToCloudTrip((cloudTripData) => {
+      setTrip(cloudTripData);
+    });
+
+    const unsubActivity = subscribeToCloudActivity((cloudNotifs) => {
+      setNotifications(cloudNotifs);
+    });
+
+    return () => {
+      unsubLocal();
+      unsubCloud();
+      unsubActivity();
+    };
   }, []);
 
   // Update Trip helper

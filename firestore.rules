@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Europe 2026 Family Trip collaborative rules
+    // Allows all family members to read and update the shared trip itinerary
+    match /trips/{tripId} {
+      allow read, write: if true;
+    }
+    match /activity_feed/{feedId} {
+      allow read, write: if true;
+    }
+  }
+}

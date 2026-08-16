@@ -1,6 +1,7 @@
 import { TripData, CollaborationNotification, WaypointPhoto } from '../types';
 import { getInitialTripData } from '../data/sampleTrip';
 import { compressImageFile } from '../utils/imageCompressor';
+import { pushTripToCloud, pushActivityNotification } from './firebase';
 
 const STORAGE_KEY = 'eur26_trip_v8';
 const NOTIFICATIONS_KEY = 'eur26_notifications_v8';
@@ -28,17 +29,17 @@ export function loadTripData(): TripData {
     console.error('Failed to load saved trip data:', err);
   }
   const initial = getInitialTripData();
-  saveTripData(initial, false);
+  saveTripData(initial, false, false);
   return initial;
 }
 
 export function resetTripToDefault(): TripData {
   const initial = getInitialTripData();
-  saveTripData(initial, true);
+  saveTripData(initial, true, true);
   return initial;
 }
 
-export function saveTripData(data: TripData, broadcast = true): void {
+export function saveTripData(data: TripData, broadcast = true, syncCloud = true, authorName?: string): void {
   try {
     const updated = {
       ...data,
@@ -52,6 +53,10 @@ export function saveTripData(data: TripData, broadcast = true): void {
         data: updated,
         timestamp: Date.now()
       });
+    }
+
+    if (syncCloud) {
+      pushTripToCloud(updated, authorName);
     }
   } catch (err) {
     console.error('Failed to save trip data:', err);
@@ -113,11 +118,14 @@ export function loadNotifications(): CollaborationNotification[] {
   ];
 }
 
-export function saveNotification(notif: CollaborationNotification): CollaborationNotification[] {
+export function saveNotification(notif: CollaborationNotification, syncCloud = true): CollaborationNotification[] {
   try {
     const existing = loadNotifications();
     const updated = [notif, ...existing].slice(0, 30);
     localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
+    if (syncCloud) {
+      pushActivityNotification(notif);
+    }
     return updated;
   } catch {
     return [];

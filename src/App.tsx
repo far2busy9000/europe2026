@@ -18,13 +18,14 @@ import { TicketWalletModal } from './components/TicketWalletModal';
 import { EmergencyContactsModal } from './components/EmergencyContactsModal';
 import { ExpenseEditModal } from './components/ExpenseEditModal';
 import { PhotoUploadModal } from './components/PhotoUploadModal';
+import { TravelJournalGallery } from './components/TravelJournalGallery';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { CurrencyMode } from './utils/currency';
 
 export default function App() {
   const [trip, setTrip] = useState<TripData>(loadTripData);
   const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<'day' | 'overview' | 'expenses'>('day');
+  const [activeTab, setActiveTab] = useState<'day' | 'overview' | 'expenses' | 'journal'>('day');
   
   // Universal currency mode
   const [currencyMode, setCurrencyMode] = useState<CurrencyMode>(() => {
@@ -206,6 +207,23 @@ export default function App() {
       avatar: '📷',
       action: 'pinned a photo memory',
       target: targetTitle
+    });
+  };
+
+  // Delete Photo
+  const handleDeletePhoto = (photoId: string) => {
+    const updatedTrip = {
+      ...trip,
+      allPhotos: (trip.allPhotos || []).filter(p => p.id !== photoId),
+      items: trip.items.map(it => ({
+        ...it,
+        photos: (it.photos || []).filter(p => p.id !== photoId)
+      }))
+    };
+    updateTrip(updatedTrip, {
+      sender: 'Anthony (Dad)',
+      avatar: '👨‍✈️',
+      action: 'removed a photo memory'
     });
   };
 
@@ -549,6 +567,17 @@ export default function App() {
               onAddTicket={handleAddStandaloneTicket}
               onDeleteExpense={handleDeleteExpense}
               onDeleteTicket={handleDeleteTicket}
+            />
+          </div>
+        )}
+
+        {/* TAB 4: Family Visual Travel Journal & Polaroid Album */}
+        {activeTab === 'journal' && (
+          <div className="animate-fadeIn">
+            <TravelJournalGallery
+              trip={trip}
+              onAddPhoto={(photo) => handleSavePhotoModal(photo)}
+              onDeletePhoto={handleDeletePhoto}
             />
           </div>
         )}

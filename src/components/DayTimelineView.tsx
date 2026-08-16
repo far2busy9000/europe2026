@@ -10,6 +10,7 @@ import { ItineraryItem, TripData, CategoryType, WaypointPhoto, ExpenseItem } fro
 import { PocketModeCard } from './PocketModeCard';
 import { InteractiveMap } from './InteractiveMap';
 import { CurrencyMode, formatCurrencyAmount, getExpenseAmountInCurrency, EUR_TO_AUD_RATE, AUD_TO_EUR_RATE } from '../utils/currency';
+import { PolaroidLightboxModal } from './PolaroidLightboxModal';
 
 interface DayTimelineViewProps {
   trip: TripData;
@@ -47,6 +48,7 @@ export const DayTimelineView: React.FC<DayTimelineViewProps> = ({
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [selectedMemberFilter, setSelectedMemberFilter] = useState<string>('all');
   const [daySubView, setDaySubView] = useState<'timeline' | 'map' | 'photos'>('timeline');
+  const [selectedViewingPhoto, setSelectedViewingPhoto] = useState<WaypointPhoto | null>(null);
 
   const currentDay = trip.days[selectedDayIndex] || trip.days[0];
   const allDayItems = trip.items.filter(it => it.dayIndex === selectedDayIndex);
@@ -293,21 +295,51 @@ export const DayTimelineView: React.FC<DayTimelineViewProps> = ({
               <p className="text-xs text-slate-400 mt-2">No photos pinned for this day yet. Snap and attach your memories!</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {dayPhotos.map(photo => (
-                <div key={photo.id} className="relative group rounded-2xl overflow-hidden shadow-xs border border-slate-200 dark:border-slate-700 aspect-square">
-                  <img 
-                    src={photo.url} 
-                    alt={photo.caption} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-2 text-white text-xs">
-                    <p className="font-bold truncate">{photo.caption}</p>
-                    <span className="text-[10px] text-slate-300 block">{photo.locationName}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 pt-2">
+              {dayPhotos.map((photo, idx) => {
+                const rotations = ['rotate-1', '-rotate-1', 'rotate-2', '-rotate-0'];
+                const rot = rotations[idx % rotations.length];
+                return (
+                  <div 
+                    key={photo.id} 
+                    onClick={() => setSelectedViewingPhoto(photo)}
+                    className={`bg-[#FFFDF9] dark:bg-[#1E293B] rounded-2xl p-3 pb-4 shadow-md hover:shadow-xl border-4 border-white dark:border-slate-800 transition-all hover:scale-105 hover:z-10 group cursor-pointer ${rot}`}
+                  >
+                    {/* Tape Header */}
+                    <div className="flex justify-center -mt-5 mb-1.5">
+                      <div className="w-16 h-4 bg-[#FFE66D]/80 rounded-xs shadow-xs border border-amber-300/60" />
+                    </div>
+
+                    <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700">
+                      <img 
+                        src={photo.url} 
+                        alt={photo.caption} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="p-2 rounded-full bg-white/95 text-[#1A535C] shadow-md font-bold text-xs flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5 text-[#FF6B6B]" />
+                          <span>View Full Size</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 px-1 space-y-1">
+                      <p 
+                        className="text-base text-[#1A535C] dark:text-[#FFE66D] font-bold leading-tight line-clamp-1"
+                        style={{ fontFamily: "'Caveat', cursive, 'Brush Script MT', sans-serif" }}
+                      >
+                        "{photo.caption}"
+                      </p>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400">
+                        <span>📍 {photo.locationName}</span>
+                        <span>by {photo.author}</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -655,13 +687,23 @@ export const DayTimelineView: React.FC<DayTimelineViewProps> = ({
                           
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                             {item.photos.map(ph => (
-                              <div key={ph.id} className="relative group/photo rounded-xl overflow-hidden shadow-xs border border-[#FFE66D]/60 dark:border-slate-700 aspect-video">
+                              <div 
+                                key={ph.id} 
+                                onClick={() => setSelectedViewingPhoto(ph)}
+                                className="relative group/photo rounded-xl overflow-hidden shadow-xs border border-[#FFE66D]/60 dark:border-slate-700 aspect-video cursor-pointer"
+                                title="Click to view full size Polaroid"
+                              >
                                 <img 
                                   src={ph.url} 
                                   alt={ph.caption} 
                                   className="w-full h-full object-cover group-hover/photo:scale-105 transition-transform duration-300"
                                   referrerPolicy="no-referrer"
                                 />
+                                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center">
+                                  <span className="p-1.5 rounded-full bg-white/90 text-[#1A535C] shadow-md text-[10px] font-bold">
+                                    🔍 Zoom
+                                  </span>
+                                </div>
                                 {ph.caption && (
                                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[10px] text-white truncate">
                                     {ph.caption}
@@ -703,6 +745,15 @@ export const DayTimelineView: React.FC<DayTimelineViewProps> = ({
           )}
         </>
       )}
+
+      {/* Polaroid Full-Size Lightbox Modal */}
+      <PolaroidLightboxModal
+        isOpen={Boolean(selectedViewingPhoto)}
+        onClose={() => setSelectedViewingPhoto(null)}
+        photo={selectedViewingPhoto}
+        allPhotos={dayPhotos.length > 0 ? dayPhotos : (selectedViewingPhoto ? [selectedViewingPhoto] : [])}
+        onSelectPhoto={setSelectedViewingPhoto}
+      />
 
     </div>
   );

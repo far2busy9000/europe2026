@@ -10,39 +10,39 @@
       <stop offset="100%" stop-color="#F7B731"/>
     </linearGradient>
     <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.2"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.25"/>
     </filter>
   </defs>
   
-  <!-- App Icon Background -->
-  <rect width="512" height="512" rx="115" fill="url(#bgGrad)"/>
+  <!-- Solid Full Bleed Square Background (Opaque for iOS & Android) -->
+  <rect width="512" height="512" fill="url(#bgGrad)"/>
   
   <!-- Subtle inner border -->
-  <rect x="8" y="8" width="496" height="496" rx="107" fill="none" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="6"/>
+  <rect x="12" y="12" width="488" height="488" fill="none" stroke="#FFFFFF" stroke-opacity="0.25" stroke-width="6"/>
 
   <!-- Golden Sun -->
-  <circle cx="256" cy="195" r="95" fill="url(#sunGrad)" filter="url(#shadow)"/>
+  <circle cx="256" cy="180" r="95" fill="url(#sunGrad)" filter="url(#shadow)"/>
   
   <!-- Sun Rays / Travel Flare -->
-  <path d="M256 70 L256 90" stroke="#FFE66D" stroke-width="8" stroke-linecap="round"/>
-  <path d="M370 115 L356 129" stroke="#FFE66D" stroke-width="8" stroke-linecap="round"/>
-  <path d="M142 115 L156 129" stroke="#FFE66D" stroke-width="8" stroke-linecap="round"/>
+  <path d="M256 55 L256 75" stroke="#FFE66D" stroke-width="8" stroke-linecap="round"/>
+  <path d="M375 105 L360 119" stroke="#FFE66D" stroke-width="8" stroke-linecap="round"/>
+  <path d="M137 105 L152 119" stroke="#FFE66D" stroke-width="8" stroke-linecap="round"/>
 
   <!-- Italian Coastline / Hills -->
-  <path d="M0 380 Q130 330 256 360 T512 340 L512 512 L0 512 Z" fill="#1A535C" opacity="0.95"/>
-  <path d="M0 420 Q160 380 300 410 T512 390 L512 512 L0 512 Z" fill="#4ECDC4"/>
+  <path d="M0 370 Q130 320 256 350 T512 330 L512 512 L0 512 Z" fill="#1A535C" opacity="0.95"/>
+  <path d="M0 410 Q160 370 300 400 T512 380 L512 512 L0 512 Z" fill="#4ECDC4"/>
 
   <!-- Colosseum / Landmark Silhouette Outline -->
   <g fill="#FFF9F2" opacity="0.95">
-    <path d="M190 355 L190 305 Q256 295 322 305 L322 355 Z"/>
+    <path d="M190 345 L190 295 Q256 285 322 295 L322 345 Z"/>
     <!-- Colosseum Arches -->
-    <rect x="205" y="315" width="16" height="24" rx="8" fill="#1A535C"/>
-    <rect x="232" y="315" width="16" height="24" rx="8" fill="#1A535C"/>
-    <rect x="264" y="315" width="16" height="24" rx="8" fill="#1A535C"/>
-    <rect x="291" y="315" width="16" height="24" rx="8" fill="#1A535C"/>
+    <rect x="205" y="305" width="16" height="24" rx="8" fill="#1A535C"/>
+    <rect x="232" y="305" width="16" height="24" rx="8" fill="#1A535C"/>
+    <rect x="264" y="305" width="16" height="24" rx="8" fill="#1A535C"/>
+    <rect x="291" y="305" width="16" height="24" rx="8" fill="#1A535C"/>
   </g>
 
   <!-- Airplane Flight Path -->
-  <path d="M110 240 Q210 160 390 170" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-dasharray="8 8" opacity="0.8"/>
-  <path d="M390 170 L370 160 L378 170 L368 178 Z" fill="#FFFFFF"/>
+  <path d="M100 230 Q210 145 400 155" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-dasharray="8 8" opacity="0.85"/>
+  <path d="M400 155 L378 143 L387 155 L376 164 Z" fill="#FFFFFF"/>
 </svg>

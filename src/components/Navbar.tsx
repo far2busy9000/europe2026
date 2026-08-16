@@ -11,8 +11,8 @@ import { formatDateRangeAU } from '../utils/date';
 
 interface NavbarProps {
   trip: TripData;
-  activeTab: 'day' | 'overview' | 'expenses';
-  setActiveTab: (tab: 'day' | 'overview' | 'expenses') => void;
+  activeTab: 'day' | 'overview' | 'expenses' | 'journal';
+  setActiveTab: (tab: 'day' | 'overview' | 'expenses' | 'journal') => void;
   selectedDayIndex: number;
   currencyMode: CurrencyMode;
   setCurrencyMode: (mode: CurrencyMode) => void;
@@ -292,11 +292,11 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         </div>
 
-        {/* Streamlined Primary Navigation (3 Tabs: Daily, Trip Calendar, Expenses & Tix) - Fully readable on all screens */}
-        <nav className="flex items-center gap-1.5 sm:gap-2 py-2 border-t border-[#FFE66D]/40 dark:border-slate-800/80">
+        {/* Streamlined Primary Navigation (4 Tabs: Daily, Trip Calendar, Expenses & Tix, Memories Journal) */}
+        <nav className="flex items-center gap-1 sm:gap-2 py-2 border-t border-[#FFE66D]/40 dark:border-slate-800/80">
           <button
             onClick={() => setActiveTab('day')}
-            className={`flex-1 py-2 px-1.5 sm:px-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex-1 py-2 px-1 sm:px-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'day'
                 ? 'bg-[#FF6B6B] text-white shadow-sm shadow-[#FF6B6B]/30'
                 : 'text-[#1A535C] dark:text-slate-300 hover:bg-[#FFE66D]/30 dark:hover:bg-slate-800'
@@ -308,26 +308,38 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={() => setActiveTab('overview')}
-            className={`flex-[1.2] py-2 px-1.5 sm:px-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex-1 py-2 px-1 sm:px-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'overview'
                 ? 'bg-[#FF6B6B] text-white shadow-sm shadow-[#FF6B6B]/30'
                 : 'text-[#1A535C] dark:text-slate-300 hover:bg-[#FFE66D]/30 dark:hover:bg-slate-800'
             }`}
           >
             <span className="text-xs sm:text-sm">🗓️</span>
-            <span>Trip Calendar</span>
+            <span>Calendar</span>
           </button>
 
           <button
             onClick={() => setActiveTab('expenses')}
-            className={`flex-[1.2] py-2 px-1.5 sm:px-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1 sm:gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+            className={`flex-1 py-2 px-1 sm:px-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'expenses'
                 ? 'bg-[#FF6B6B] text-white shadow-sm shadow-[#FF6B6B]/30'
                 : 'text-[#1A535C] dark:text-slate-300 hover:bg-[#FFE66D]/30 dark:hover:bg-slate-800'
             }`}
           >
             <span className="text-xs sm:text-sm">💶</span>
-            <span>Expenses & Tix</span>
+            <span>Expenses</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('journal')}
+            className={`flex-1 py-2 px-1 sm:px-2.5 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'journal'
+                ? 'bg-[#FF6B6B] text-white shadow-sm shadow-[#FF6B6B]/30'
+                : 'text-[#1A535C] dark:text-slate-300 hover:bg-[#FFE66D]/30 dark:hover:bg-slate-800'
+            }`}
+          >
+            <span className="text-xs sm:text-sm">📷</span>
+            <span>Memories</span>
           </button>
         </nav>
 

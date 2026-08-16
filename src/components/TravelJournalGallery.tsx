@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Camera, Plus, MapPin, Sparkles, User, Trash2, CheckCircle2, ShieldCheck, UploadCloud, X, ZoomIn } from 'lucide-react';
+import { Camera, Plus, MapPin, Sparkles, User, Trash2, CheckCircle2, ShieldCheck, UploadCloud, X, ZoomIn, Filter, Calendar, Heart } from 'lucide-react';
 import { TripData, WaypointPhoto } from '../types';
 import { compressImageFile, formatBytes, CompressedImageResult } from '../utils/imageCompressor';
+import { PolaroidLightboxModal } from './PolaroidLightboxModal';
 
 interface TravelJournalGalleryProps {
   trip: TripData;
@@ -22,6 +23,12 @@ export const TravelJournalGallery: React.FC<TravelJournalGalleryProps> = ({
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   const [compressStats, setCompressStats] = useState<CompressedImageResult | null>(null);
   const [isCompressing, setIsCompressing] = useState(false);
+  
+  // Filtering states
+  const [selectedAuthorFilter, setSelectedAuthorFilter] = useState<string>('all');
+  const [selectedCityFilter, setSelectedCityFilter] = useState<string>('all');
+
+  // Viewing lightbox photo
   const [selectedViewingPhoto, setSelectedViewingPhoto] = useState<WaypointPhoto | null>(null);
 
   // Aggregate all photos from trip + items
@@ -35,6 +42,16 @@ export const TravelJournalGallery: React.FC<TravelJournalGalleryProps> = ({
       });
     }
   });
+
+  // Filtered photos
+  const filteredPhotos = allPhotos.filter(p => {
+    if (selectedAuthorFilter !== 'all' && p.author !== selectedAuthorFilter) return false;
+    if (selectedCityFilter !== 'all' && !p.locationName?.toLowerCase().includes(selectedCityFilter.toLowerCase())) return false;
+    return true;
+  });
+
+  // Unique cities
+  const uniqueCities = Array.from(new Set(allPhotos.map(p => p.locationName).filter(Boolean)));
 
   const processImageFile = async (file: File) => {
     if (!file) return;
@@ -98,20 +115,18 @@ export const TravelJournalGallery: React.FC<TravelJournalGalleryProps> = ({
     <div className="space-y-6">
       
       {/* Header Banner */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white/85 dark:bg-[#1A282F]/85 backdrop-blur-md p-4 sm:p-5 rounded-3xl border border-[#FFE66D]/70 dark:border-slate-800 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <span className="p-2.5 rounded-2xl bg-[#FF6B6B]/20 text-[#FF6B6B] border border-[#FF6B6B]/30">
-              <Camera className="w-5 h-5" />
-            </span>
-            <div>
-              <h3 className="text-lg sm:text-xl font-black font-display text-[#1A535C] dark:text-white">
-                Family Visual Travel Journal ({allPhotos.length} Memories)
-              </h3>
-              <p className="text-xs text-[#2D3436]/60 dark:text-slate-400 font-medium">
-                Snapshots, seaside polaroids, and sunset memories across Italy & French Riviera.
-              </p>
-            </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white/90 dark:bg-[#1A282F]/90 backdrop-blur-md p-4 sm:p-5 rounded-3xl border border-[#FFE66D]/70 dark:border-slate-800 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#FF6B6B] to-[#FFE66D] flex items-center justify-center text-white shadow-md shadow-[#FF6B6B]/20 flex-shrink-0">
+            <Camera className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-lg sm:text-xl font-black font-display text-[#1A535C] dark:text-white">
+              Family Travel Journal & Polaroid Album ({allPhotos.length} Memories)
+            </h3>
+            <p className="text-xs text-[#2D3436]/60 dark:text-slate-400 font-medium">
+              Click any Polaroid to view full size, read handwritten captions, or download to your phone.
+            </p>
           </div>
         </div>
 
@@ -128,133 +143,174 @@ export const TravelJournalGallery: React.FC<TravelJournalGalleryProps> = ({
         </button>
       </div>
 
-      {/* Polaroid Grid */}
-      {allPhotos.length === 0 ? (
+      {/* Filter Bar */}
+      {allPhotos.length > 0 && (
+        <div className="bg-white/80 dark:bg-[#1A282F]/80 backdrop-blur-sm p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-black uppercase text-slate-400 flex items-center gap-1 mr-1">
+              <Filter className="w-3 h-3 text-[#FF6B6B]" /> Filter:
+            </span>
+
+            <button
+              onClick={() => setSelectedAuthorFilter('all')}
+              className={`px-2.5 py-1 rounded-xl font-bold transition-all cursor-pointer ${
+                selectedAuthorFilter === 'all'
+                  ? 'bg-[#1A535C] text-[#FFE66D]'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              All Members
+            </button>
+
+            {trip.members.map(member => (
+              <button
+                key={member.id}
+                onClick={() => setSelectedAuthorFilter(selectedAuthorFilter === member.name ? 'all' : member.name)}
+                className={`px-2.5 py-1 rounded-xl font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                  selectedAuthorFilter === member.name
+                    ? 'bg-[#FF6B6B] text-white'
+                    : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                }`}
+              >
+                <span>{member.avatarEmoji}</span>
+                <span>{member.name.split(' ')[0]}</span>
+              </button>
+            ))}
+          </div>
+
+          {uniqueCities.length > 1 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-400 text-[11px] font-bold">City:</span>
+              <select
+                value={selectedCityFilter}
+                onChange={e => setSelectedCityFilter(e.target.value)}
+                className="px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 font-semibold"
+              >
+                <option value="all">All Locations</option>
+                {uniqueCities.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Polaroid Corkboard Grid */}
+      {filteredPhotos.length === 0 ? (
         <div className="text-center py-16 px-4 bg-white/60 dark:bg-slate-900/60 rounded-3xl border-2 border-dashed border-[#FFE66D] dark:border-slate-800">
           <span className="text-5xl">📷</span>
           <h4 className="text-base font-black text-[#1A535C] dark:text-slate-200 mt-3">
-            No holiday photos logged yet
+            {allPhotos.length === 0 ? 'No holiday memories uploaded yet' : 'No photos match this filter'}
           </h4>
           <p className="text-xs text-[#2D3436]/60 dark:text-slate-400 mt-1 max-w-sm mx-auto font-medium">
-            Upload your first gelato moment, sunset view, or beach snapshot to start the family album.
+            {allPhotos.length === 0
+              ? 'Upload your first gelato moment, sunset view, or beach snapshot to start the family album.'
+              : 'Try clearing the filters to view all trip photos.'}
           </p>
           <button
-            onClick={() => setShowUploadModal(true)}
+            onClick={() => {
+              if (allPhotos.length === 0) setShowUploadModal(true);
+              else {
+                setSelectedAuthorFilter('all');
+                setSelectedCityFilter('all');
+              }
+            }}
             className="mt-4 px-4 py-2 rounded-xl bg-[#FF6B6B] text-white text-xs font-black hover:bg-[#E85A5A] cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
           >
             <Plus className="w-4 h-4" />
-            <span>Add Memory</span>
+            <span>{allPhotos.length === 0 ? 'Upload Memory' : 'Reset Filters'}</span>
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {allPhotos.map((photo) => (
-            <div 
-              key={photo.id}
-              onClick={() => setSelectedViewingPhoto(photo)}
-              className="bg-white dark:bg-[#1A282F] rounded-2xl p-3.5 pb-5 shadow-md hover:shadow-xl border border-[#FFE66D]/80 dark:border-slate-800 transition-all hover:-translate-y-1 group cursor-pointer"
-            >
-              {/* Photo Frame */}
-              <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-[#FFE66D]/40">
-                <img 
-                  src={photo.url} 
-                  alt={photo.caption}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  referrerPolicy="no-referrer"
-                />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+          {filteredPhotos.map((photo, idx) => {
+            // Subtle alternating rotation for realistic polaroid scrapbook feel
+            const rotations = ['rotate-1', '-rotate-1', 'rotate-2', '-rotate-2', 'rotate-0'];
+            const rot = rotations[idx % rotations.length];
 
-                {/* Location Tag */}
-                <div className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-[#1A535C]/85 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1 border border-white/20">
-                  <MapPin className="w-3 h-3 text-[#FFE66D]" />
-                  <span>{photo.locationName}</span>
-                </div>
-
-                {/* Zoom hover indicator */}
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                  <span className="p-2 rounded-full bg-white/90 text-[#1A535C] shadow-lg">
-                    <ZoomIn className="w-4 h-4" />
-                  </span>
-                </div>
-
-                {/* Delete button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`Remove photo "${photo.caption}"?`)) {
-                      onDeletePhoto(photo.id);
-                    }
-                  }}
-                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 backdrop-blur-md text-white/80 hover:text-[#FF6B6B] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
-                  title="Remove Photo"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Caption & Details */}
-              <div className="mt-3.5 px-1 space-y-1">
-                <p className="font-serif italic text-lg text-[#1A535C] dark:text-slate-100 leading-snug">
-                  "{photo.caption}"
-                </p>
-
-                <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-[#FFE66D]/40 dark:border-slate-800">
-                  <span className="flex items-center gap-1 font-bold text-[#1A535C] dark:text-slate-300">
-                    <User className="w-3 h-3 text-[#FF6B6B]" /> {photo.author}
-                  </span>
-                  <span className="text-[10px] text-[#2D3436]/60 dark:text-slate-400 font-medium">{photo.takenAt}</span>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Lightbox Modal */}
-      {selectedViewingPhoto && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-fadeIn"
-          onClick={() => setSelectedViewingPhoto(null)}
-        >
-          <div 
-            className="max-w-3xl w-full bg-white dark:bg-[#1A282F] rounded-3xl p-4 sm:p-6 overflow-hidden shadow-2xl space-y-4"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-[#FF6B6B]" />
-                <span className="font-bold text-sm text-[#1A535C] dark:text-white">
-                  {selectedViewingPhoto.locationName}
-                </span>
-                <span className="text-xs text-slate-400 font-medium">• {selectedViewingPhoto.takenAt}</span>
-              </div>
-              <button 
-                onClick={() => setSelectedViewingPhoto(null)}
-                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-[#1A535C] dark:hover:text-white cursor-pointer"
+            return (
+              <div 
+                key={photo.id}
+                onClick={() => setSelectedViewingPhoto(photo)}
+                className={`bg-[#FFFDF9] dark:bg-[#1E293B] rounded-2xl p-3 sm:p-4 pb-5 shadow-md hover:shadow-2xl border-4 border-white dark:border-slate-800 transition-all duration-300 hover:scale-[1.03] hover:z-20 group cursor-pointer ${rot}`}
               >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+                {/* Washi Tape Header */}
+                <div className="flex justify-center -mt-6 mb-2">
+                  <div className="w-20 h-5 bg-[#FFE66D]/80 backdrop-blur-xs rounded-xs shadow-xs -rotate-1 border border-amber-300/60" />
+                </div>
 
-            <div className="max-h-[65vh] rounded-2xl overflow-hidden bg-slate-950 flex items-center justify-center">
-              <img 
-                src={selectedViewingPhoto.url} 
-                alt={selectedViewingPhoto.caption}
-                className="max-h-[65vh] w-auto object-contain mx-auto"
-                referrerPolicy="no-referrer"
-              />
-            </div>
+                {/* Photo Canvas */}
+                <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-900 border border-slate-200 dark:border-slate-700">
+                  <img 
+                    src={photo.url} 
+                    alt={photo.caption}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    referrerPolicy="no-referrer"
+                  />
 
-            <div className="flex items-center justify-between pt-1">
-              <p className="font-serif italic text-base sm:text-lg text-[#1A535C] dark:text-slate-200">
-                "{selectedViewingPhoto.caption}"
-              </p>
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#FFE66D]/40 text-[#1A535C] dark:text-[#FFE66D]">
-                Photo by {selectedViewingPhoto.author}
-              </span>
-            </div>
-          </div>
+                  {/* Location Tag */}
+                  {photo.locationName && (
+                    <div className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1 border border-white/20">
+                      <MapPin className="w-3 h-3 text-[#FFE66D]" />
+                      <span>{photo.locationName}</span>
+                    </div>
+                  )}
+
+                  {/* Zoom Hover Indicator */}
+                  <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span className="p-2.5 rounded-full bg-white/95 text-[#1A535C] shadow-lg font-bold text-xs flex items-center gap-1">
+                      <ZoomIn className="w-4 h-4 text-[#FF6B6B]" />
+                      <span>View Full Size</span>
+                    </span>
+                  </div>
+
+                  {/* Delete button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (confirm(`Remove photo "${photo.caption}"?`)) {
+                        onDeletePhoto(photo.id);
+                      }
+                    }}
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 backdrop-blur-md text-white/80 hover:text-[#FF6B6B] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+                    title="Remove Photo"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Polaroid Handwritten Caption */}
+                <div className="mt-3.5 px-1 space-y-1.5">
+                  <p 
+                    className="text-lg sm:text-xl text-[#1A535C] dark:text-[#FFE66D] font-bold leading-tight line-clamp-2"
+                    style={{ fontFamily: "'Caveat', cursive, 'Brush Script MT', sans-serif" }}
+                  >
+                    "{photo.caption || 'Summer Memory'}"
+                  </p>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                    <span className="flex items-center gap-1 font-bold text-[#FF6B6B] dark:text-[#FFA8A8]">
+                      <User className="w-3 h-3" /> {photo.author}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-medium">{photo.takenAt}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
+
+      {/* Reusable Polaroid Lightbox Modal */}
+      <PolaroidLightboxModal
+        isOpen={Boolean(selectedViewingPhoto)}
+        onClose={() => setSelectedViewingPhoto(null)}
+        photo={selectedViewingPhoto}
+        allPhotos={filteredPhotos}
+        onSelectPhoto={setSelectedViewingPhoto}
+        onDeletePhoto={onDeletePhoto}
+      />
 
       {/* Upload Memory Modal */}
       {showUploadModal && (
@@ -298,7 +354,7 @@ export const TravelJournalGallery: React.FC<TravelJournalGalleryProps> = ({
                 <div className="flex flex-col items-center justify-center space-y-1">
                   <UploadCloud className="w-8 h-8 text-[#FF6B6B]" />
                   <p className="text-xs font-bold text-[#1A535C] dark:text-white">
-                    {isCompressing ? 'Optimizing photo in browser...' : 'Click to browse or drop phone photo here'}
+                    {isCompressing ? 'Optimizing photo in browser...' : 'Tap to select photo from phone / camera'}
                   </p>
                   <p className="text-[10px] text-slate-400">
                     Supports any size photo (JPG, PNG, HEIC/WebP) • Auto-optimized
@@ -417,4 +473,3 @@ export const TravelJournalGallery: React.FC<TravelJournalGalleryProps> = ({
     </div>
   );
 };
-

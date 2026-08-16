@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-coral: #FF6B6B;
+  --color-coral-dark: #E85A5A;
+  --color-coral-light: #FFE5E5;
+  --color-yellow: #FFE66D;
+  --color-yellow-dark: #ECCF52;
+  --color-yellow-light: #FFF9D2;
+  --color-mint: #4ECDC4;
+  --color-mint-dark: #3DB8AF;
+  --color-mint-light: #E8FAF8;
+  --color-teal: #1A535C;
+  --color-teal-dark: #133E45;
+  --color-teal-light: #E7F0F1;
+  --color-charcoal: #2D3436;
+  --color-charcoal-light: #636E72;
+  --color-cream: #FFF9F2;
+}
+
+@layer base {
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: 'Outfit', sans-serif;
+  }
+
+  .font-handwriting {
+    font-family: 'Caveat', cursive;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(78, 205, 196, 0.4);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 107, 0.7);
+}
+
+/* Leaflet map styles */
+.leaflet-container {
+  font-family: inherit;
+  border-radius: 1.25rem;
+  z-index: 10;
+}
+
+.custom-map-pin {
+  filter: drop-shadow(0 4px 8px rgba(26, 83, 92, 0.35));
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.custom-map-pin:hover {
+  transform: scale(1.2) translateY(-3px);
+}

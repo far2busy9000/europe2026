@@ -1,0 +1,6 @@
+{
+  "name": "EUROPE TRIP 2026",
+  "description": "Collaborative, offline-first family holiday itinerary with interactive route maps, calendar day-swiping, linked expense tracker, ticket hub, weather forecast, photo travel journal, and ICS calendar export.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

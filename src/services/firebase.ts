@@ -3,6 +3,7 @@ import {
   getFirestore, 
   doc, 
   setDoc, 
+  deleteDoc,
   getDoc, 
   onSnapshot, 
   collection, 
@@ -12,7 +13,7 @@ import {
   addDoc, 
   serverTimestamp 
 } from 'firebase/firestore';
-import { TripData, CollaborationNotification } from '../types';
+import { TripData, CollaborationNotification, WaypointPhoto } from '../types';
 import { getInitialTripData } from '../data/sampleTrip';
 
 // Default config from Firebase provisioning
@@ -37,7 +38,8 @@ export function isFirebaseConfigured(): boolean {
 }
 
 /**
- * Saves or pushes the trip data to the shared Firestore cloud document
+ * Saves or pushes the trip data to the shared Firestore cloud document.
+ * Keeps the main itinerary document fast and below Firestore 1MB limit.
  */
 export async function pushTripToCloud(data: TripData, authorName?: string): Promise<boolean> {
   try {
@@ -89,6 +91,73 @@ export function subscribeToCloudTrip(
     return unsubscribe;
   } catch (err) {
     console.warn('Could not establish Firestore subscription:', err);
+    return () => {};
+  }
+}
+
+/**
+ * Pushes an individual photo memory directly to the dedicated Firestore `trip_photos` collection.
+ * This guarantees photo uploads on any device (iPad, iPhone, Mac) are saved in their own document
+ * and never get rejected due to Firestore's 1MB single-document ceiling.
+ */
+export async function pushPhotoToCloud(photo: WaypointPhoto): Promise<boolean> {
+  try {
+    const photoRef = doc(db, 'trip_photos', photo.id);
+    await setDoc(photoRef, {
+      ...photo,
+      updatedAtServer: serverTimestamp()
+    });
+    return true;
+  } catch (err) {
+    console.warn('Could not push photo to cloud collection:', err);
+    return false;
+  }
+}
+
+/**
+ * Deletes a photo memory document from the cloud collection
+ */
+export async function deletePhotoFromCloud(photoId: string): Promise<boolean> {
+  try {
+    const photoRef = doc(db, 'trip_photos', photoId);
+    await deleteDoc(photoRef);
+    return true;
+  } catch (err) {
+    console.warn('Could not delete photo from cloud collection:', err);
+    return false;
+  }
+}
+
+/**
+ * Subscribes in real-time to all family photos from the dedicated `trip_photos` collection.
+ */
+export function subscribeToCloudPhotos(
+  onPhotos: (photos: WaypointPhoto[]) => void
+): () => void {
+  try {
+    const photosRef = collection(db, 'trip_photos');
+    const unsubscribe = onSnapshot(
+      photosRef,
+      (snapshot) => {
+        const photosList: WaypointPhoto[] = [];
+        snapshot.forEach((docSnap) => {
+          const p = docSnap.data() as WaypointPhoto;
+          photosList.push({
+            ...p,
+            id: docSnap.id
+          });
+        });
+        if (photosList.length > 0) {
+          onPhotos(photosList);
+        }
+      },
+      (err) => {
+        console.warn('Cloud photos subscription notice:', err);
+      }
+    );
+
+    return unsubscribe;
+  } catch {
     return () => {};
   }
 }

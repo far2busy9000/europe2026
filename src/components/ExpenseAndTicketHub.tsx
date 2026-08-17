@@ -626,7 +626,11 @@ export const ExpenseAndTicketHub: React.FC<ExpenseAndTicketHubProps> = ({
                     </div>
 
                     <button
-                      onClick={() => onDeleteTicket(tkt.id)}
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to delete "${tkt.title}"?`)) {
+                          onDeleteTicket(tkt.id);
+                        }
+                      }}
                       className="text-slate-300 hover:text-[#FF6B6B] p-1 text-xs cursor-pointer"
                       title="Delete Ticket"
                     >

@@ -70,6 +70,8 @@ export interface WaypointPhoto {
   takenAt: string;
   author: string;
   locationName: string;
+  itemId?: string;
+  dayIndex?: number;
 }
 
 export interface WeatherData {

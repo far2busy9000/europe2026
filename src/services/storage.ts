@@ -137,9 +137,9 @@ export async function fileToBase64(file: File): Promise<string> {
   if (file.type.startsWith('image/')) {
     try {
       const result = await compressImageFile(file, {
-        maxWidth: 1600,
-        maxHeight: 1600,
-        quality: 0.82
+        maxWidth: 1280,
+        maxHeight: 1280,
+        quality: 0.78
       });
       return result.dataUrl;
     } catch {

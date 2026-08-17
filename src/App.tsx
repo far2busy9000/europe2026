@@ -4,7 +4,13 @@ import {
   WaypointPhoto, FamilyMember, CollaborationNotification 
 } from './types';
 import { loadTripData, saveTripData, subscribeToTripSync, loadNotifications, saveNotification } from './services/storage';
-import { subscribeToCloudTrip, subscribeToCloudActivity } from './services/firebase';
+import { 
+  subscribeToCloudTrip, 
+  subscribeToCloudActivity, 
+  pushPhotoToCloud, 
+  deletePhotoFromCloud, 
+  subscribeToCloudPhotos 
+} from './services/firebase';
 import { Navbar } from './components/Navbar';
 import { DayNavigator } from './components/DayNavigator';
 import { DayTimelineView } from './components/DayTimelineView';
@@ -78,14 +84,56 @@ export default function App() {
     localStorage.setItem('eur26_currency_mode', currencyMode);
   }, [currencyMode]);
 
-  // Subscribe to real-time BroadcastChannel sync across tabs/windows & Cloud Firestore sync
+  // Subscribe to real-time BroadcastChannel sync across tabs/windows, Cloud Firestore trip sync & dedicated Photos sync
   useEffect(() => {
     const unsubLocal = subscribeToTripSync((syncedData) => {
       setTrip(syncedData);
     });
 
     const unsubCloud = subscribeToCloudTrip((cloudTripData) => {
-      setTrip(cloudTripData);
+      setTrip(prevTrip => {
+        // Retain any locally uploaded photos that may be newer
+        const currentPhotos = prevTrip.allPhotos || [];
+        const cloudPhotos = cloudTripData.allPhotos || [];
+        const mergedPhotosMap = new Map<string, WaypointPhoto>();
+        cloudPhotos.forEach(p => mergedPhotosMap.set(p.id, p));
+        currentPhotos.forEach(p => mergedPhotosMap.set(p.id, p));
+        
+        return {
+          ...cloudTripData,
+          allPhotos: Array.from(mergedPhotosMap.values())
+        };
+      });
+    });
+
+    const unsubPhotos = subscribeToCloudPhotos((cloudPhotos) => {
+      if (!cloudPhotos || cloudPhotos.length === 0) return;
+      setTrip(prevTrip => {
+        const photosMap = new Map<string, WaypointPhoto>();
+        (prevTrip.allPhotos || []).forEach(p => photosMap.set(p.id, p));
+        cloudPhotos.forEach(p => photosMap.set(p.id, p));
+        const mergedPhotos = Array.from(photosMap.values());
+
+        // Also ensure item-level photos are synchronized
+        const updatedItems = prevTrip.items.map(it => {
+          const itemPhotos = mergedPhotos.filter(p => p.itemId === it.id);
+          if (itemPhotos.length > 0) {
+            const itemPhotoMap = new Map<string, WaypointPhoto>();
+            (it.photos || []).forEach(p => itemPhotoMap.set(p.id, p));
+            itemPhotos.forEach(p => itemPhotoMap.set(p.id, p));
+            return { ...it, photos: Array.from(itemPhotoMap.values()) };
+          }
+          return it;
+        });
+
+        const newTrip = {
+          ...prevTrip,
+          allPhotos: mergedPhotos,
+          items: updatedItems
+        };
+        saveTripData(newTrip, false, false);
+        return newTrip;
+      });
     });
 
     const unsubActivity = subscribeToCloudActivity((cloudNotifs) => {
@@ -95,6 +143,7 @@ export default function App() {
     return () => {
       unsubLocal();
       unsubCloud();
+      unsubPhotos();
       unsubActivity();
     };
   }, []);
@@ -180,6 +229,14 @@ export default function App() {
   };
 
   const handleSavePhotoModal = (newPhoto: WaypointPhoto, targetItemId?: string) => {
+    const photoWithMeta: WaypointPhoto = {
+      ...newPhoto,
+      itemId: targetItemId
+    };
+
+    // Save directly to dedicated Firestore collection for immediate sync to all iPads & family devices
+    pushPhotoToCloud(photoWithMeta);
+
     let updatedItems = trip.items;
     let targetTitle = 'Visual Journal';
 
@@ -189,7 +246,7 @@ export default function App() {
         targetTitle = targetItem.title;
         updatedItems = trip.items.map(it => {
           if (it.id === targetItemId) {
-            return { ...it, photos: [...(it.photos || []), newPhoto] };
+            return { ...it, photos: [...(it.photos || []).filter(p => p.id !== photoWithMeta.id), photoWithMeta] };
           }
           return it;
         });
@@ -199,7 +256,7 @@ export default function App() {
     const updatedTrip = {
       ...trip,
       items: updatedItems,
-      allPhotos: [newPhoto, ...(trip.allPhotos || [])]
+      allPhotos: [photoWithMeta, ...(trip.allPhotos || []).filter(p => p.id !== photoWithMeta.id)]
     };
 
     updateTrip(updatedTrip, {
@@ -212,6 +269,8 @@ export default function App() {
 
   // Delete Photo
   const handleDeletePhoto = (photoId: string) => {
+    if (!confirm('Are you sure you want to delete this photo memory?')) return;
+    deletePhotoFromCloud(photoId);
     const updatedTrip = {
       ...trip,
       allPhotos: (trip.allPhotos || []).filter(p => p.id !== photoId),
@@ -325,6 +384,10 @@ export default function App() {
 
   // Delete Expense
   const handleDeleteExpense = (expId: string) => {
+    const targetExp = (trip.allExpenses || []).find(e => e.id === expId) || 
+                      trip.items.flatMap(it => it.expenses || []).find(e => e.id === expId);
+    const expTitle = targetExp?.title ? `"${targetExp.title}"` : 'this expense';
+    if (!confirm(`Are you sure you want to delete ${expTitle}?`)) return;
     const updatedTrip = {
       ...trip,
       allExpenses: (trip.allExpenses || []).filter(e => e.id !== expId),
@@ -333,11 +396,19 @@ export default function App() {
         expenses: (it.expenses || []).filter(e => e.id !== expId)
       }))
     };
-    updateTrip(updatedTrip);
+    updateTrip(updatedTrip, {
+      sender: 'Anthony (Dad)',
+      avatar: '👨‍✈️',
+      action: `deleted expense ${expTitle}`
+    });
   };
 
   // Delete Ticket
   const handleDeleteTicket = (tktId: string) => {
+    const targetTkt = (trip.allTickets || []).find(t => t.id === tktId) || 
+                      trip.items.flatMap(it => it.tickets || []).find(t => t.id === tktId);
+    const tktTitle = targetTkt?.title ? `"${targetTkt.title}"` : 'this ticket/pass';
+    if (!confirm(`Are you sure you want to delete ${tktTitle}?`)) return;
     const updatedTrip = {
       ...trip,
       allTickets: (trip.allTickets || []).filter(t => t.id !== tktId),
@@ -346,7 +417,11 @@ export default function App() {
         tickets: (it.tickets || []).filter(t => t.id !== tktId)
       }))
     };
-    updateTrip(updatedTrip);
+    updateTrip(updatedTrip, {
+      sender: 'Anthony (Dad)',
+      avatar: '👨‍✈️',
+      action: `deleted ticket ${tktTitle}`
+    });
   };
 
   // Add Family Member

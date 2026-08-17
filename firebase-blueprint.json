@@ -28,6 +28,23 @@
         "details": { "type": "string" }
       },
       "required": ["timestamp", "author", "action", "details"]
+    },
+    "trip_photos": {
+      "title": "Waypoint Photo Memory",
+      "description": "Individual photo memory uploaded by family members",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "url": { "type": "string" },
+        "caption": { "type": "string" },
+        "author": { "type": "string" },
+        "takenAt": { "type": "string" },
+        "dayIndex": { "type": "number" },
+        "itemId": { "type": "string" },
+        "locationName": { "type": "string" },
+        "createdAtServer": { "type": "string" }
+      },
+      "required": ["id", "url", "caption", "author", "takenAt"]
     }
   },
   "firestore": {
@@ -38,6 +55,10 @@
     "activity_feed": {
       "schema": "activity_feed",
       "description": "Feed of real-time family updates"
+    },
+    "trip_photos": {
+      "schema": "trip_photos",
+      "description": "Individual photo documents ensuring real-time multi-device sync without hitting 1MB document ceilings"
     }
   }
 }

@@ -6,6 +6,9 @@ service cloud.firestore {
     match /trips/{tripId} {
       allow read, write: if true;
     }
+    match /trip_photos/{photoId} {
+      allow read, write: if true;
+    }
     match /activity_feed/{feedId} {
       allow read, write: if true;
     }

@@ -529,6 +529,7 @@ export default function App() {
                 setIsDayEditModalOpen(true);
               }}
               onSelectDay={setSelectedDayIndex}
+              onDeletePhoto={handleDeletePhoto}
             />
           </div>
         )}

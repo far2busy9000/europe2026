@@ -27,6 +27,7 @@ interface DayTimelineViewProps {
   onEditDay?: () => void;
   onSelectDay?: (index: number) => void;
   onAddPhotoDirect?: (photo: WaypointPhoto) => void;
+  onDeletePhoto?: (photoId: string) => void;
 }
 
 export const DayTimelineView: React.FC<DayTimelineViewProps> = ({
@@ -43,7 +44,8 @@ export const DayTimelineView: React.FC<DayTimelineViewProps> = ({
   onOpenWallet,
   onEditDay,
   onSelectDay,
-  onAddPhotoDirect
+  onAddPhotoDirect,
+  onDeletePhoto
 }) => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [selectedMemberFilter, setSelectedMemberFilter] = useState<string>('all');
@@ -323,6 +325,21 @@ export const DayTimelineView: React.FC<DayTimelineViewProps> = ({
                           <span>View Full Size</span>
                         </span>
                       </div>
+
+                      {onDeletePhoto && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Remove photo "${photo.caption}"?`)) {
+                              onDeletePhoto(photo.id);
+                            }
+                          }}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 backdrop-blur-md text-white/80 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
+                          title="Delete Photo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     <div className="mt-2.5 px-1 space-y-1">
@@ -753,6 +770,7 @@ export const DayTimelineView: React.FC<DayTimelineViewProps> = ({
         photo={selectedViewingPhoto}
         allPhotos={dayPhotos.length > 0 ? dayPhotos : (selectedViewingPhoto ? [selectedViewingPhoto] : [])}
         onSelectPhoto={setSelectedViewingPhoto}
+        onDeletePhoto={onDeletePhoto}
       />
 
     </div>

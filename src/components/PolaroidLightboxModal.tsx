@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, MapPin, User, Calendar, Download, Trash2, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { WaypointPhoto } from '../types';
 
@@ -25,6 +26,17 @@ export const PolaroidLightboxModal: React.FC<PolaroidLightboxModalProps> = ({
   useEffect(() => {
     setShowConfirmDelete(false);
   }, [photo?.id]);
+
+  // Lock body scroll when lightbox is open
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,43 +108,44 @@ export const PolaroidLightboxModal: React.FC<PolaroidLightboxModalProps> = ({
     }
   };
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-2 sm:p-4 overflow-hidden animate-fadeIn"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-md p-3 sm:p-6 overflow-hidden"
+      style={{ top: 0, left: 0, right: 0, bottom: 0, width: '100vw', height: '100dvh' }}
       onClick={onClose}
     >
-      {/* Navigation Arrows for screens */}
+      {/* Navigation Arrows for multi-photo albums */}
       {hasMultiple && (
         <>
           <button
             onClick={handlePrev}
-            className="absolute left-1 sm:left-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-black/40 hover:bg-white/30 text-white backdrop-blur-md transition-all cursor-pointer z-50 shadow-lg hover:scale-110 active:scale-95"
+            className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-black/50 hover:bg-white/30 text-white backdrop-blur-md transition-all cursor-pointer z-50 shadow-lg hover:scale-110 active:scale-95"
             title="Previous Photo (Left Arrow)"
           >
-            <ChevronLeft className="w-5 h-5 sm:w-7 sm:h-7" />
+            <ChevronLeft className="w-6 h-6 sm:w-8 sm:h-8" />
           </button>
 
           <button
             onClick={handleNext}
-            className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-black/40 hover:bg-white/30 text-white backdrop-blur-md transition-all cursor-pointer z-50 shadow-lg hover:scale-110 active:scale-95"
+            className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-black/50 hover:bg-white/30 text-white backdrop-blur-md transition-all cursor-pointer z-50 shadow-lg hover:scale-110 active:scale-95"
             title="Next Photo (Right Arrow)"
           >
-            <ChevronRight className="w-5 h-5 sm:w-7 sm:h-7" />
+            <ChevronRight className="w-6 h-6 sm:w-8 sm:h-8" />
           </button>
         </>
       )}
 
       {/* Top Floating Controls Bar */}
-      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 flex items-center gap-1.5 sm:gap-2 z-50">
+      <div className="absolute top-3 right-3 sm:top-5 sm:right-5 flex items-center gap-2 z-50">
         {hasMultiple && (
-          <span className="text-white/90 text-[11px] sm:text-xs font-black px-2.5 py-1.5 rounded-xl bg-white/15 backdrop-blur-md">
+          <span className="text-white/90 text-xs font-black px-3 py-1.5 rounded-xl bg-white/15 backdrop-blur-md">
             {currentIndex + 1} / {allPhotos.length}
           </span>
         )}
 
         <button
           onClick={handleDownload}
-          className="px-2.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition-all cursor-pointer flex items-center gap-1 text-xs font-bold shadow-sm active:scale-95"
+          className="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 text-white backdrop-blur-md transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold shadow-sm active:scale-95"
           title="Save original photo to your device"
         >
           <Download className="w-4 h-4" />
@@ -145,7 +158,7 @@ export const PolaroidLightboxModal: React.FC<PolaroidLightboxModalProps> = ({
               e.stopPropagation();
               setShowConfirmDelete(true);
             }}
-            className="px-2.5 py-1.5 rounded-xl bg-red-500/80 hover:bg-red-600 text-white backdrop-blur-md transition-all cursor-pointer flex items-center gap-1 text-xs font-bold shadow-sm active:scale-95"
+            className="px-3 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white backdrop-blur-md transition-all cursor-pointer flex items-center gap-1.5 text-xs font-bold shadow-sm active:scale-95"
             title="Delete this photo"
           >
             <Trash2 className="w-4 h-4" />
@@ -155,7 +168,7 @@ export const PolaroidLightboxModal: React.FC<PolaroidLightboxModalProps> = ({
 
         <button
           onClick={onClose}
-          className="p-1.5 sm:p-2 rounded-xl bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition-all cursor-pointer active:scale-95"
+          className="p-2 rounded-xl bg-white/20 hover:bg-white/40 text-white backdrop-blur-md transition-all cursor-pointer active:scale-95"
           title="Close (Esc)"
         >
           <X className="w-5 h-5" />
@@ -165,7 +178,7 @@ export const PolaroidLightboxModal: React.FC<PolaroidLightboxModalProps> = ({
       {/* Delete Confirmation Overlay inside modal */}
       {showConfirmDelete && (
         <div 
-          className="absolute inset-0 z-60 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+          className="absolute inset-0 z-[100000] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
           onClick={e => e.stopPropagation()}
         >
           <div className="bg-white dark:bg-[#1E293B] rounded-3xl p-5 sm:p-6 max-w-sm w-full shadow-2xl border-2 border-red-400 text-center space-y-4 animate-scaleUp">
@@ -197,22 +210,22 @@ export const PolaroidLightboxModal: React.FC<PolaroidLightboxModalProps> = ({
         </div>
       )}
 
-      {/* Authentic Polaroid Frame Card - Strictly fits screen with no vertical scroll */}
+      {/* Authentic Polaroid Frame Card - Centered directly in viewport */}
       <div 
-        className="relative w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl max-h-[82dvh] sm:max-h-[86dvh] bg-[#FFFDF9] dark:bg-[#1E293B] rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 shadow-2xl border-4 sm:border-6 border-white dark:border-slate-800 flex flex-col justify-between overflow-hidden transition-all select-none"
+        className="relative w-full max-w-sm sm:max-w-md md:max-w-lg max-h-[85dvh] bg-[#FFFDF9] dark:bg-[#1E293B] rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] border-4 sm:border-6 border-white dark:border-slate-800 flex flex-col justify-between overflow-hidden select-none"
         onClick={e => e.stopPropagation()}
       >
         {/* Top Decorative Tape Strip */}
-        <div className="flex justify-center -mt-1 mb-1.5 flex-shrink-0">
-          <div className="w-20 sm:w-28 h-4 sm:h-5 bg-[#FFE66D]/85 backdrop-blur-xs rounded-xs shadow-xs border border-amber-300/60 flex items-center justify-center -rotate-1">
-            <span className="text-[9px] sm:text-[10px] font-black tracking-widest uppercase text-[#1A535C]/70">
+        <div className="flex justify-center -mt-1 mb-2 flex-shrink-0">
+          <div className="w-24 sm:w-28 h-5 bg-[#FFE66D]/85 backdrop-blur-xs rounded-xs shadow-xs border border-amber-300/60 flex items-center justify-center -rotate-1">
+            <span className="text-[10px] font-black tracking-widest uppercase text-[#1A535C]/75">
               EUROPE 2026
             </span>
           </div>
         </div>
 
-        {/* Main Photo Canvas - Auto Scales to viewport with no scrolling */}
-        <div className="relative flex-1 min-h-0 w-full rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner">
+        {/* Main Photo Canvas - Centers and scales cleanly */}
+        <div className="relative flex-1 min-h-[180px] max-h-[58dvh] sm:max-h-[62dvh] w-full rounded-xl overflow-hidden bg-slate-950 flex items-center justify-center border border-slate-200 dark:border-slate-700 shadow-inner">
           <img 
             src={photo.url} 
             alt={photo.caption} 
@@ -222,7 +235,7 @@ export const PolaroidLightboxModal: React.FC<PolaroidLightboxModalProps> = ({
 
           {/* Location Badge on Photo */}
           {photo.locationName && (
-            <div className="absolute top-2 left-2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-xs font-black flex items-center gap-1 border border-white/20 shadow-md">
+            <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-white text-[11px] font-black flex items-center gap-1 border border-white/20 shadow-md">
               <MapPin className="w-3 h-3 text-[#FFE66D]" />
               <span>{photo.locationName}</span>
             </div>
@@ -230,40 +243,38 @@ export const PolaroidLightboxModal: React.FC<PolaroidLightboxModalProps> = ({
         </div>
 
         {/* Polaroid Bottom Chin - Handwritten Caption & Signature */}
-        <div className="flex-shrink-0 pt-2 sm:pt-3 px-1 space-y-1 sm:space-y-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
+        <div className="flex-shrink-0 pt-2.5 px-1 space-y-1.5 border-t border-slate-200/60 dark:border-slate-700/60">
           {/* Handwritten Caption */}
-          <div className="flex items-start justify-between gap-2">
-            <p 
-              className="text-base sm:text-xl md:text-2xl text-[#1A535C] dark:text-[#FFE66D] font-bold leading-tight line-clamp-2"
-              style={{ fontFamily: "'Caveat', cursive, 'Brush Script MT', sans-serif" }}
-            >
-              "{photo.caption || 'Unforgettable Summer Moment'}"
-            </p>
-          </div>
+          <p 
+            className="text-lg sm:text-2xl text-[#1A535C] dark:text-[#FFE66D] font-bold leading-tight line-clamp-2"
+            style={{ fontFamily: "'Caveat', cursive, 'Brush Script MT', sans-serif" }}
+          >
+            "{photo.caption || 'Unforgettable Summer Moment'}"
+          </p>
 
           {/* Metadata & Quick Action Footer */}
-          <div className="flex items-center justify-between text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 pt-0.5">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-0.5">
             <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1 font-bold text-[#FF6B6B] dark:text-[#FFA8A8] bg-[#FF6B6B]/10 px-2 py-0.5 rounded-md">
-                <User className="w-3 h-3" />
+              <span className="flex items-center gap-1 font-bold text-[#FF6B6B] dark:text-[#FFA8A8] bg-[#FF6B6B]/10 px-2 py-0.5 rounded-md text-[11px] sm:text-xs">
+                <User className="w-3.5 h-3.5" />
                 <span>{photo.author || 'Family Member'}</span>
               </span>
               {photo.takenAt && (
-                <span className="hidden sm:flex items-center gap-1 text-slate-400">
-                  <Calendar className="w-3 h-3 text-[#4ECDC4]" />
+                <span className="hidden sm:flex items-center gap-1 text-slate-400 text-[11px]">
+                  <Calendar className="w-3.5 h-3.5 text-[#4ECDC4]" />
                   <span>{photo.takenAt}</span>
                 </span>
               )}
             </div>
 
-            {/* In-Card Quick Delete */}
+            {/* In-Card Quick Delete Button */}
             {onDeletePhoto && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowConfirmDelete(true);
                 }}
-                className="text-slate-400 hover:text-red-500 flex items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30"
+                className="text-slate-400 hover:text-red-500 flex items-center gap-1 text-xs font-bold transition-colors cursor-pointer px-1.5 py-0.5 rounded-md hover:bg-red-50 dark:hover:bg-red-950/30"
                 title="Delete this photo"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -276,4 +287,6 @@ export const PolaroidLightboxModal: React.FC<PolaroidLightboxModalProps> = ({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };

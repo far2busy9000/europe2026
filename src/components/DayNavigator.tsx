@@ -2,12 +2,12 @@ import React, { useRef, useEffect } from 'react';
 import { 
   ChevronLeft, ChevronRight, Sun, CloudSun, CloudRain, 
   Wind, Sparkles, MapPin, Compass, ThermometerSun, Umbrella, Edit3,
-  Cake, Gift, Eye
+  Cake, Gift, Eye, Navigation
 } from 'lucide-react';
 import { TripDay, TripData } from '../types';
 import { TRIP_BIRTHDAYS } from '../data/tripLegs';
 import { CurrencyMode, formatCurrencyAmount, getExpenseAmountInCurrency } from '../utils/currency';
-import { formatDateAU, formatDayAndDateAU } from '../utils/date';
+import { formatDateAU, formatDayAndDateAU, getTripDayIndexForDate, isCurrentlyDuringTrip } from '../utils/date';
 
 interface DayNavigatorProps {
   trip: TripData;
@@ -27,6 +27,40 @@ export const DayNavigator: React.FC<DayNavigatorProps> = ({
   const currentDay = trip.days[selectedDayIndex] || trip.days[0];
   const touchStartX = useRef<number>(0);
   const touchEndX = useRef<number>(0);
+  
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const dayButtonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+
+  const todayTripDayIndex = getTripDayIndexForDate(trip.days);
+  const isTripActive = isCurrentlyDuringTrip(trip.days);
+  const isViewingToday = isTripActive && selectedDayIndex === todayTripDayIndex;
+
+  // Auto-scroll the selected day card into center view smoothly
+  useEffect(() => {
+    const el = dayButtonRefs.current.get(selectedDayIndex);
+    if (el && scrollContainerRef.current) {
+      el.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest'
+      });
+    }
+  }, [selectedDayIndex]);
+
+  // Initial mount auto-scroll immediately without delay
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const el = dayButtonRefs.current.get(selectedDayIndex);
+      if (el && scrollContainerRef.current) {
+        el.scrollIntoView({
+          behavior: 'auto',
+          inline: 'center',
+          block: 'nearest'
+        });
+      }
+    }, 60);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Swipe handling
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -99,6 +133,17 @@ export const DayNavigator: React.FC<DayNavigatorProps> = ({
             <span className="text-xs font-black uppercase tracking-wider text-[#FF6B6B] dark:text-[#FFE66D]">
               Day Selector
             </span>
+
+            {/* Quick Return to Today Button */}
+            {isTripActive && !isViewingToday && (
+              <button
+                onClick={() => onSelectDay(todayTripDayIndex)}
+                className="px-2.5 py-0.5 rounded-full bg-[#4ECDC4]/20 hover:bg-[#4ECDC4]/30 text-[#1A535C] dark:text-[#4ECDC4] text-[11px] font-black tracking-wide border border-[#4ECDC4]/60 transition-all flex items-center gap-1 cursor-pointer shadow-2xs"
+                title="Jump directly to today's active schedule"
+              >
+                <span>📍 Jump to Today (Day {todayTripDayIndex + 1})</span>
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-1.5">
             <button
@@ -128,10 +173,14 @@ export const DayNavigator: React.FC<DayNavigatorProps> = ({
           </div>
         </div>
 
-        {/* Scrollable date cards */}
-        <div className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar scroll-smooth">
+        {/* Scrollable date cards with ref mapping */}
+        <div 
+          ref={scrollContainerRef}
+          className="flex gap-2.5 overflow-x-auto pb-1 no-scrollbar scroll-smooth"
+        >
           {trip.days.map((day, idx) => {
             const isSelected = idx === selectedDayIndex;
+            const isToday = isTripActive && idx === todayTripDayIndex;
             const itemsInDay = trip.items.filter(it => it.dayIndex === idx);
             const isCompleted = itemsInDay.length > 0 && itemsInDay.every(it => it.completed);
             const isBirthday = TRIP_BIRTHDAYS.some(b => b.dayNumber === day.dayNumber);
@@ -139,15 +188,24 @@ export const DayNavigator: React.FC<DayNavigatorProps> = ({
             return (
               <button
                 key={day.dayIndex}
+                ref={(el) => {
+                  if (el) {
+                    dayButtonRefs.current.set(idx, el);
+                  } else {
+                    dayButtonRefs.current.delete(idx);
+                  }
+                }}
                 onClick={() => onSelectDay(idx)}
                 className={`flex-shrink-0 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl text-left transition-all relative cursor-pointer ${
                   isSelected
                     ? 'bg-gradient-to-br from-[#FF6B6B] to-[#FF8E53] text-white shadow-md shadow-[#FF6B6B]/30 scale-[1.02]'
-                    : 'bg-[#FFF9F2] hover:bg-[#FFE66D]/30 dark:bg-slate-800/90 dark:hover:bg-slate-800 text-[#2D3436] dark:text-slate-200 border border-[#FFE66D]/60 dark:border-slate-700'
+                    : isToday
+                      ? 'bg-[#FFF9F2] hover:bg-[#FFE66D]/30 dark:bg-slate-800/90 dark:hover:bg-slate-800 text-[#2D3436] dark:text-slate-200 border-2 border-[#4ECDC4] shadow-xs ring-1 ring-[#4ECDC4]/40'
+                      : 'bg-[#FFF9F2] hover:bg-[#FFE66D]/30 dark:bg-slate-800/90 dark:hover:bg-slate-800 text-[#2D3436] dark:text-slate-200 border border-[#FFE66D]/60 dark:border-slate-700'
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <span className={`text-[10px] font-black uppercase tracking-wider ${isSelected ? 'text-[#FFE66D]' : 'text-[#FF6B6B] dark:text-[#FFE66D]'}`}>
+                  <span className={`text-[10px] font-black uppercase tracking-wider ${isSelected ? 'text-[#FFE66D]' : isToday ? 'text-[#1A535C] dark:text-[#4ECDC4]' : 'text-[#FF6B6B] dark:text-[#FFE66D]'}`}>
                     Day {day.dayNumber}
                   </span>
                   <span className={`text-[11px] font-bold ${isSelected ? 'text-white' : 'text-[#1A535C] dark:text-slate-300'}`}>
@@ -160,6 +218,12 @@ export const DayNavigator: React.FC<DayNavigatorProps> = ({
                 <div className={`text-[10px] mt-0.5 font-medium truncate ${isSelected ? 'text-white/90' : 'text-[#2D3436]/70 dark:text-slate-400'}`}>
                   {formatDayAndDateAU(day.dayOfWeek, day.date, 'short')}
                 </div>
+
+                {isToday && !isSelected && (
+                  <span className="absolute -top-1.5 left-2 px-1.5 py-0.2 rounded-md bg-[#4ECDC4] text-[#1A535C] font-black text-[9px] shadow-xs uppercase tracking-wider">
+                    Today
+                  </span>
+                )}
 
                 {isBirthday && (
                   <span className="absolute -bottom-1 -right-1 text-xs bg-white dark:bg-slate-900 rounded-full p-0.5 shadow-xs" title="Special Birthday Celebration!">
@@ -195,6 +259,13 @@ export const DayNavigator: React.FC<DayNavigatorProps> = ({
               <span className="px-3 py-1 rounded-full bg-[#FFE66D] text-[#1A535C] text-xs font-black uppercase tracking-wide shadow-sm">
                 Day {currentDay.dayNumber} of {trip.days.length}
               </span>
+
+              {isViewingToday && (
+                <span className="px-3 py-1 rounded-full bg-[#4ECDC4] text-[#1A535C] text-xs font-black uppercase tracking-wide flex items-center gap-1 shadow-sm animate-pulse-subtle">
+                  <span>📍</span>
+                  <span>TODAY'S ITINERARY</span>
+                </span>
+              )}
               
               {/* Prominent Day of the Week and Actual Date Badge (Always visible on mobile & desktop in Australian DD MMM YYYY format) */}
               <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs">

@@ -117,3 +117,57 @@ export function formatDateRangeAU(startDateStr: string, endDateStr: string): str
 
   return `${start.day} ${startMonth} ${start.year} – ${end.day} ${endMonth} ${end.year}`;
 }
+
+/**
+ * Returns today's date formatted as YYYY-MM-DD in local time
+ */
+export function getTodayDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Calculates the appropriate Trip Day index (0-based) for a given date.
+ * - If the date falls within the 45 trip days, returns that day's exact index (e.g. 2026-08-30 -> 13 / Day 14).
+ * - If the trip is exhausted (date > last trip day), returns 0 (Day 1) as requested.
+ * - If before the trip starts, returns 0 (Day 1).
+ */
+export function getTripDayIndexForDate(days: { date: string; dayIndex: number }[], targetDateStr?: string): number {
+  if (!days || days.length === 0) return 0;
+  
+  const todayStr = targetDateStr || getTodayDateString();
+  
+  // 1. Exact match within trip days
+  const exactIndex = days.findIndex(d => d.date === todayStr);
+  if (exactIndex !== -1) {
+    return exactIndex;
+  }
+
+  const firstDay = days[0].date;
+  const lastDay = days[days.length - 1].date;
+
+  // 2. If before trip starts -> Day 1 (index 0)
+  if (todayStr < firstDay) {
+    return 0;
+  }
+
+  // 3. If after trip ends -> Reset to Day 1 (index 0) as requested
+  if (todayStr > lastDay) {
+    return 0;
+  }
+
+  // 4. Default safe fallback
+  return 0;
+}
+
+/**
+ * Checks if the current date is actively within the trip range
+ */
+export function isCurrentlyDuringTrip(days: { date: string }[], targetDateStr?: string): boolean {
+  if (!days || days.length === 0) return false;
+  const todayStr = targetDateStr || getTodayDateString();
+  return days.some(d => d.date === todayStr);
+}

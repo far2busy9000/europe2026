@@ -27,12 +27,58 @@ import { PhotoUploadModal } from './components/PhotoUploadModal';
 import { TravelJournalGallery } from './components/TravelJournalGallery';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { CurrencyMode } from './utils/currency';
+import { getTripDayIndexForDate, getTodayDateString } from './utils/date';
 
 export default function App() {
   const [trip, setTrip] = useState<TripData>(loadTripData);
-  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(0);
+  
+  // Initialize to current trip day (e.g. Day 14 on 30-Aug) or user's active session day
+  const [selectedDayIndex, setSelectedDayIndex] = useState<number>(() => {
+    const tripData = loadTripData();
+    const todayIndex = getTripDayIndexForDate(tripData.days);
+    
+    if (typeof window !== 'undefined') {
+      try {
+        const savedSession = sessionStorage.getItem('eur26_selected_day_session');
+        if (savedSession) {
+          const parsed = JSON.parse(savedSession);
+          const currentToday = getTodayDateString();
+          // If the user actively picked a specific day in this session today, preserve it
+          if (
+            parsed.sessionDate === currentToday && 
+            typeof parsed.dayIndex === 'number' && 
+            parsed.dayIndex >= 0 && 
+            parsed.dayIndex < tripData.days.length
+          ) {
+            return parsed.dayIndex;
+          }
+        }
+      } catch (e) {
+        // fallback to todayIndex
+      }
+    }
+    
+    return todayIndex;
+  });
+
   const [activeTab, setActiveTab] = useState<'day' | 'overview' | 'expenses' | 'journal'>('day');
   
+  // Safe day selector that stores user session and prevents accidental resets
+  const handleSelectDay = (index: number) => {
+    const validIndex = Math.max(0, Math.min(index, trip.days.length - 1));
+    setSelectedDayIndex(validIndex);
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('eur26_selected_day_session', JSON.stringify({
+          dayIndex: validIndex,
+          sessionDate: getTodayDateString()
+        }));
+      } catch (e) {
+        // ignore
+      }
+    }
+  };
+
   // Universal currency mode
   const [currencyMode, setCurrencyMode] = useState<CurrencyMode>(() => {
     if (typeof window !== 'undefined') {
@@ -51,6 +97,47 @@ export default function App() {
   });
 
   const [notifications, setNotifications] = useState<CollaborationNotification[]>(loadNotifications);
+  
+  // When app regains focus or visibility (e.g. user opens the app on a new day during the holiday),
+  // automatically advance to the new current day of the trip
+  useEffect(() => {
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        const currentTodayStr = getTodayDateString();
+        try {
+          const savedSession = sessionStorage.getItem('eur26_selected_day_session');
+          if (savedSession) {
+            const parsed = JSON.parse(savedSession);
+            // If the session was from a previous date, advance to the new current day
+            if (parsed.sessionDate !== currentTodayStr) {
+              const newDayIndex = getTripDayIndexForDate(trip.days, currentTodayStr);
+              handleSelectDay(newDayIndex);
+            }
+          } else {
+            const newDayIndex = getTripDayIndexForDate(trip.days, currentTodayStr);
+            handleSelectDay(newDayIndex);
+          }
+        } catch (e) {
+          const newDayIndex = getTripDayIndexForDate(trip.days, currentTodayStr);
+          handleSelectDay(newDayIndex);
+        }
+      }
+    };
+
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    return () => {
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+    };
+  }, [trip.days]);
+
+  // Ensure selectedDayIndex is always within bounds
+  useEffect(() => {
+    if (trip.days.length > 0 && selectedDayIndex >= trip.days.length) {
+      handleSelectDay(trip.days.length - 1);
+    }
+  }, [trip.days.length, selectedDayIndex]);
   
   // Modals state
   const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
@@ -574,7 +661,7 @@ export default function App() {
               trip={trip}
               selectedDayIndex={selectedDayIndex}
               currencyMode={currencyMode}
-              onSelectDay={setSelectedDayIndex}
+              onSelectDay={handleSelectDay}
               onEditDay={() => {
                 setEditingDay(trip.days[selectedDayIndex]);
                 setIsDayEditModalOpen(true);
@@ -603,7 +690,7 @@ export default function App() {
                 setEditingDay(trip.days[selectedDayIndex]);
                 setIsDayEditModalOpen(true);
               }}
-              onSelectDay={setSelectedDayIndex}
+              onSelectDay={handleSelectDay}
               onDeletePhoto={handleDeletePhoto}
             />
           </div>
@@ -616,11 +703,10 @@ export default function App() {
               trip={trip}
               currencyMode={currencyMode}
               onSelectDay={(idx) => {
-                setSelectedDayIndex(idx);
+                handleSelectDay(idx);
                 setActiveTab('day');
               }}
               onOpenMap={() => {
-                setSelectedDayIndex(0);
                 setActiveTab('day');
               }}
               onEditDay={(idx) => {
